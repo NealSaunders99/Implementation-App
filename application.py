@@ -20,10 +20,6 @@ def get_connection():
     return psycopg2.connect(**conn_info())
 
 def seed_if_needed():
-    """
-    Create the table if it doesn't exist and insert seed rows only once.
-    Safe to call multiple times.
-    """
     conn = get_connection()
     cur = conn.cursor()
 
@@ -51,4 +47,45 @@ def seed_if_needed():
     conn.close()
 
 def fetch_messages():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT content, created_at FROM messages ORDER BY id;")
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+# ---------- Routes ----------
+
+@application.route("/")
+def health():
+    return "Application started successfully"
+
+@application.route("/messages")
+def messages():
+    seed_if_needed()
+    rows = fetch_messages()
+
+    html = [
+        "<!doctype html>",
+        "<html>",
+        "<head><meta charset='utf-8'><title>Messages</title></head>",
+        "<body style='font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; padding:24px;'>",
+        "<h1>Messages</h1>",
+        "<ul>"
+    ]
+
+    for content, created_at in rows:
+        html.append(
+            f"<li>{content} "
+            f"<small style='color:#666;'>({created_at})</small></li>"
+        )
+
+    html.extend(["</ul>", "</body>", "</html>"])
+    return "\n".join(html)
+
+# ---------- Local development only ----------
+
+if __name__ == "__main__":
+    application.run(host="0.0.0.0", port=5000, debug=True)
 
