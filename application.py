@@ -2,6 +2,7 @@ from flask import Flask
 import os
 import psycopg2
 
+
 # Elastic Beanstalk expects this object to be named "application"
 application = Flask(__name__)
 
